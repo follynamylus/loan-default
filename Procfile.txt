@@ -1,1 +1,1 @@
-web: sh setup.sh && streamlit run loan_deploy.py
+web: sh setup.sh && streamlit run credit_risk.py
