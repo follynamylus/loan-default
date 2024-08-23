@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd 
 import pickle as pkl
-
+from sklearn.preprocessing import StandardScaler
 
 st.title("Credit Risk Prediction Using Xtreme Gradient Boosting Algorithm (XGBoost)")
 
@@ -59,9 +59,11 @@ for i in dt_df.columns :
         dt_df[i] = df[i]
     else :
         dt_df[i] = dt_df[i]
+scaler = StandardScaler()
+scaled_df = scaler.fit_transform(dt_df)
 with open('xgboost.pkl', 'rb') as f:
     rf_model = pkl.load(f)
-    pred = rf_model.predict(dt_df)
+    pred = rf_model.predict(scaled_df)
 if pred[0] == 0 :
     prediction = "Not Default"
 else : 
