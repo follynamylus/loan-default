@@ -10,11 +10,11 @@ st.title("Credit Risk Prediction Using Xtreme Gradient Boosting Algorithm (XGBoo
 st.sidebar.title("Input The Feature Values")
 pa = st.sidebar.number_input(label= "person_age", min_value= 18, max_value= 90)
 pi = st.sidebar.number_input(label= "person_income", min_value= 2)
-pel = st.sidebar.number_input(label= "person_emp_length", min_value= 0.00, max_value= 100.00)
+pel = st.sidebar.number_input(label= "person_emp_length", min_value= 0.00)
 la = st.sidebar.number_input(label= "loan_amnt", min_value= 5)
-lir = st.sidebar.number_input(label= "loan_int_rate", min_value= 5.0, max_value= 25.0)
-lpi = st.sidebar.number_input(label= "loan_percent_income", min_value= 0.00, max_value= 0.85)
-cbp = st.sidebar.number_input(label= "cb_person_cred_hist_length", min_value= 2, max_value= 35)
+lir = st.sidebar.number_input(label= "loan_int_rate", min_value= 5.0)
+lpi = st.sidebar.number_input(label= "loan_percent_income", min_value= 0.00)
+cbp = st.sidebar.number_input(label= "cb_person_cred_hist_length", min_value= 2)
 
 pho = st.sidebar.selectbox( label='person_home_ownership', options=["RENT","MORTGAGE","OWN","OTHER"])
 li = st.sidebar.selectbox(label='loan_intent', options=["EDUCATION","MEDICAL","VENTURE",
@@ -72,4 +72,3 @@ else :
 if st.button("Click for Prediction"):
     st.success("Prediction")
     st.text(f"The customer is predicted to {prediction}")
-    st.text(rf_model.predict_proba(dt_df)[:,1])
