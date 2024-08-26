@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
+import plotly.express as px
+
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
@@ -142,11 +144,28 @@ elif inst.lower() == "multiple instances" :
         tab2.success("Credit Risk Prediction Using Extreme Gradient Boosting Classifier Algorithm")
         tab2.dataframe(dp)
 
+        tab2.write(dp["Prediction"].value_counts())
+
+        col1,col2 = tab2.columns(2)
         
-        tab2.success("Credit Risk Prediction Bar Plot")
-        fig = plt.figure(figsize=(2,2))
-        sns.countplot(data = dp, x= "Prediction", color= "red")
-        tab2.pyplot(fig,use_container_width=False)
+        with col1 :
+            fig = px.pie(dp, names= "Prediction", height=300, title= "Prediction Pie chart")
+            #fig.update_traces(marker_color='#008060')
+            st.plotly_chart(fig, use_container_width=True)
+            fig = px.bar(dp, x= "Prediction", y="loan_int_rate", height=300, title= "Prediction against Interest rate")
+            fig.update_traces(marker_color='#008060')
+            st.plotly_chart(fig, use_container_width=True)
+        with col2 :
+            fig  = px.scatter(data_frame= dp, x= "Default Probability %", labels= "Prediction",
+                              color= "cb_person_default_on_file",
+                               title= "prediction probability against Default on file",
+                                height= 300 )
+            #fig.update_traces(marker_color='#702014')
+            st.plotly_chart(fig, use_container_width=True)
+
+            fig = px.histogram(dp, x="Default Probability %", y= "person_income", height=300, title= "Prediction probability against person income")
+            fig.update_traces(marker_color='#702014')
+            st.plotly_chart(fig, use_container_width=True)
 
 tab3.success("Credit Risk Prediction Using Extreme Gradient Boosting Classifier Algorithm")
 tab3.write(
