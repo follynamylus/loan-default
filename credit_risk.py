@@ -1,3 +1,5 @@
+## Import the required packages
+
 import streamlit as st
 import pandas as pd 
 import pickle as pkl
@@ -9,29 +11,36 @@ import plotly.express as px
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-
+## Set the dropdown for prediction choice.
 st.sidebar.title("Select type of prediction")
 inst = st.sidebar.selectbox("Select Prefered Prediction", options=["Single Instance", "Multiple Instances"])
 
+## Load in the model 
 with open('model.pkl', 'rb') as f:
-    rf_model = pkl.load(f)
+    xgb_model = pkl.load(f)
 
+## Create the tabs
 tab3, tab1, tab2 = st.tabs(["ABOUT THE APP","DATA INPUT","PREDICTION"])
 
+## Condition code for single instance prediction
 if inst.lower() == "single instance" :
 
+## Operations to perform in the first tab for single instance prediction
     with tab1 :
 
+    ## Declare the header for first tab of single prediction 
         tab1.subheader("Input feature values")
-        col1, col2 = tab1.columns(2)
 
+    ## Divide the tab into two columns
+        col1, col2 = tab1.columns(2)
+    ## Create input widgets for first column
         with col1 :
             pa = col1.number_input(label= "person_age", min_value= 18, max_value= 90)
             pi = col1.number_input(label= "person_income", min_value= 2)
             pel = col1.number_input(label= "person_emp_length", min_value= 0.00, max_value= 100.00)
             la = col1.number_input(label= "loan_amnt", min_value= 5)
             lir = col1.number_input(label= "loan_int_rate", min_value= 5.0, max_value= 25.0)
-
+    ## Create Input widgets for second column
         with col2 :
             lpi = col2.number_input(label= "loan_percent_income", min_value= 0.00, max_value= 0.85)
             cbp = col2.number_input(label= "cb_person_cred_hist_length", min_value= 2, max_value= 35)
@@ -41,7 +50,7 @@ if inst.lower() == "single instance" :
             lg = col2.selectbox(label='loan_grade', options=["A","B","C","D","E","F","G"])
             cbdf = col2.selectbox(label='cb_person_default_on_file', options=["Y","N"])
         
-
+# Create a dataframe from the input
     df = pd.DataFrame()
     df["person_age"] = [pa]
     df['person_income'] = [pi]
@@ -56,10 +65,12 @@ if inst.lower() == "single instance" :
     df['loan_grade'] = [lg]
     df['cb_person_default_on_file'] = [cbdf]
 
+## Encode categorical columns from the dataframe
     cats = ["person_home_ownership","loan_intent","loan_grade","cb_person_default_on_file"]
     en_df = pd.get_dummies(df[cats])
     df.drop(cats, axis = 1, inplace=True)
     df = df.join(en_df)
+## Create a placeholder dataframe that contains all features needed by the loaded model
     dt = {"person_age":[False],"person_income":[False],"person_emp_length":[False],"loan_amnt":[False],"loan_int_rate":[False],
             "loan_percent_income":[False],
             "cb_person_cred_hist_length":[False],
@@ -70,25 +81,30 @@ if inst.lower() == "single instance" :
             "loan_grade_A":[False],'loan_grade_B':[False],'loan_grade_C':[False],'loan_grade_D':[False],'loan_grade_E':[False],'loan_grade_F':[False],
             "loan_grade_G":[False],'cb_person_default_on_file_N':[False],'cb_person_default_on_file_Y':[False]
             }
+    ## Compare the placeholder dataframe with the input features dataframe and fill missing features with place holder feature.
     dt_df = pd.DataFrame(dt)
     for i in dt_df.columns :
         if i in df.columns :
             dt_df[i] = df[i]
         else :
             dt_df[i] = dt_df[i]
-        pred = rf_model.predict(dt_df)
-        pred_proba = rf_model.predict_proba(dt_df)
+
+    # Predict using the resulting dataframe
+        pred = xgb_model.predict(dt_df)
+        pred_proba = xgb_model.predict_proba(dt_df)
+    # Convert the result into Category class.
     if pred[0] == 0 :
         prediction = "Not Default"
     else : 
         prediction = "Default"
-
+    # Create Outputs to display prediction and prediction probability
     tab2.success("Credit Risk Prediction Using Extreme Gradient Boosting Classifier Algorithm")
     if tab2.button("Click for Prediction"):
         tab2.success("Prediction")
         tab2.text(f"The customer is predicted to {prediction}")
         tab2.write(f"The probability of the credit default is {pred_proba[:,1] * 100} %")
 
+## Create a a bar plot for the predict probability.
         fig = plt.figure(figsize=(2,2))
         sns.barplot(x=np.arange(len(pred_proba[0])), y=pred_proba[0], color= 'brown')
         plt.xticks(np.arange(len(pred_proba[0])), labels=[f"Default {i}" for i in range(len(pred_proba[0]))])
@@ -97,17 +113,28 @@ if inst.lower() == "single instance" :
         plt.title(f'Probability for default')
         tab2.pyplot(fig,use_container_width=False)
 
+# Operations for multiple instances prediction
+
 elif inst.lower() == "multiple instances" :
+
+    ## Create input widget for multiple instances
     mult = tab1.file_uploader("Upload a CSV file ")
+
+    ## Code to handle empty file.
     if mult == None :
         tab1.write("Load in a CSV file")
+    
+    ## Data processing for multiple instances
     else :
+        # Read in the file
         df = pd.read_csv(mult)
         dp = df.copy()
+        # Encode categorical features
         cats = ["person_home_ownership","loan_intent","loan_grade","cb_person_default_on_file"]
         en_df = pd.get_dummies(df[cats])
         df.drop(cats, axis = 1, inplace=True)
         df = df.join(en_df)
+        # Create placeholder dataframe
         dt = {"person_age":[False],"person_income":[False],"person_emp_length":[False],"loan_amnt":[False],"loan_int_rate":[False],
                 "loan_percent_income":[False],
                 "cb_person_cred_hist_length":[False],
@@ -118,6 +145,8 @@ elif inst.lower() == "multiple instances" :
                 "loan_grade_A":[False],'loan_grade_B':[False],'loan_grade_C':[False],'loan_grade_D':[False],'loan_grade_E':[False],'loan_grade_F':[False],
                 "loan_grade_G":[False],'cb_person_default_on_file_N':[False],'cb_person_default_on_file_Y':[False]
                 }
+        
+        # Compare to ensure the features corresponds with what was used to train the model.
         dt_df = pd.DataFrame(dt,index=(range(len(df))))
         for i in dt_df.columns :
             if i in df.columns :
@@ -125,29 +154,34 @@ elif inst.lower() == "multiple instances" :
             else :
                 dt_df[i] = dt_df[i]
                 
-    
+        # Fill missing values with zero
         dt_df = dt_df.fillna(0)
 
-        pred = rf_model.predict(dt_df)
-        pred_proba = rf_model.predict_proba(dt_df)[:,1] * 100
+        # Predict and predict probability of multiple features
+        pred = xgb_model.predict(dt_df)
+        pred_proba = xgb_model.predict_proba(dt_df)[:,1] * 100
 
+        # Convert predictions to categorical classes
         predict = []
         for i in range(len(pred)) :
             if pred[i] == 0 :
                 predict.append("Not Default")
             else : 
                 predict.append("Default")
-
+        # Include prediction in the dataframe
         dp["Prediction"] = predict
         dp["Default Probability %"] = pred_proba
         
+        # Display the prediction dataframe and value counts
         tab2.success("Credit Risk Prediction Using Extreme Gradient Boosting Classifier Algorithm")
         tab2.dataframe(dp)
 
         tab2.write(dp["Prediction"].value_counts())
-
+         
+         # Create columns and plots for multiple prediction
         col1,col2 = tab2.columns(2)
         
+        ## Create pie and bar charts in first column
         with col1 :
             fig = px.pie(dp, names= "Prediction", height=300, title= "Prediction Pie chart")
             #fig.update_traces(marker_color='#008060')
@@ -155,6 +189,8 @@ elif inst.lower() == "multiple instances" :
             fig = px.bar(dp, x= "Prediction", y="loan_int_rate", height=300, title= "Prediction against Interest rate")
             fig.update_traces(marker_color='#008060')
             st.plotly_chart(fig, use_container_width=True)
+
+        ## Create Scatter and histogram for the second column
         with col2 :
             fig  = px.scatter(data_frame= dp, x= "Default Probability %", labels= "Prediction",
                               color= "cb_person_default_on_file",
@@ -167,18 +203,8 @@ elif inst.lower() == "multiple instances" :
             fig.update_traces(marker_color='#702014')
             st.plotly_chart(fig, use_container_width=True)
 
+## Create information about the application in first tab.
 tab3.success("Credit Risk Prediction Using Extreme Gradient Boosting Classifier Algorithm")
-tab3.write(
-    """
-    The Web Application is used for making sales forecasts / predictions of a fast food enterprise.
-
-    The web application makes use of statistical models trained using a data modeled on Item-7 sales from 1st of January 2015 till 31st if December 2022.
-    The data which are aggregated to the average monthly value for the weather features.
-
-    The application consists of an adjustable Sidebar for Input widgets,
-    Visualizations are provided on the first tab while data frame of the predictions and download option are provided on the second tabs of the application
-    """
-)
 
 tab3.subheader("ABOUT THE PROJECT")
 tab3.write(
@@ -234,22 +260,3 @@ tab3.write(
 
     """
 )
-#tab3.subheader("ABOUT OUTPUT WIDGETS")
-#tab3.write(
-  #  """
-   # The Output widgets are in tabs .
-
-   # Tab 1  the PREDICTION AND DOWNLOAD tab, It displays the prediction dataframe and a download button option for downloading the file in a 
-   # CSV format.
-
-   # Tab 2 the VISUALIZATION tab contains graphs and plots of the predictions. The graphs are in expanders that include the Line plot , Bar chart ,
-   # stacked Area plot and stacked Density Contour plot . These variables are flexible and multiple can be selected at a time,
-    # it also can be activated or deactivated by clicking on their names by the top
-    #right corner of Visualization tab, all these are for multiple predictions.
-
-    #Tab 2 for single prediction displays values for the date and the date the sales were made.
-
-
-    #Tab 3 ABOUT APPLICATION tab, contains information on the application widgets .
-    #"""
-#)
